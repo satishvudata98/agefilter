@@ -1,9 +1,9 @@
 <template>
   <v-app>
     <v-container>
-        <v-row >
-            <v-col cols="12" class="text-center"> <h1>Age Filter</h1></v-col>
-        </v-row>
+      <v-row>
+        <v-col cols="12" class="text-center" dense> <h1>Age Filter</h1></v-col>
+      </v-row>
       <v-row>
         <v-col cols="12">
           <v-btn @click="addNewCard" color="primary" class="d-flex float-right"
@@ -23,7 +23,7 @@
               <h2>{{ range.label }}</h2>
             </v-col>
             <v-col cols="4">
-              <v-btn @click="toggleSort()" color="secondary">Sort</v-btn>
+              <v-btn @click="toggleSort(range)" color="secondary">Sort</v-btn>
             </v-col>
           </v-row>
 
@@ -68,7 +68,7 @@
         </v-col>
       </v-row>
 
-      <v-dialog v-model="editDialog" max-width="600">
+      <v-dialog v-model="editDialog" max-width="600" persistent>
         <v-card>
           <v-card-title class="headline">Edit User</v-card-title>
           <v-card-text>
@@ -78,6 +78,8 @@
                   ><v-text-field
                     v-model="editedItem.name"
                     label="Name"
+                    hint="name required"
+                    :rules="nameRules"
                   ></v-text-field
                 ></v-col>
                 <v-col cols="6"
@@ -92,6 +94,8 @@
                   <v-text-field
                     v-model="editedItem.age"
                     label="Age"
+                    hint="age required"
+                    :rules="ageRules"
                   ></v-text-field
                 ></v-col>
                 <v-col cols="6"
@@ -109,7 +113,7 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-dialog v-model="addDialog" max-width="600">
+      <v-dialog v-model="addDialog" max-width="600" persistent>
         <v-card>
           <v-card-title class="headline">Add User</v-card-title>
           <v-card-text>
@@ -118,7 +122,9 @@
                 <v-col cols="6"
                   ><v-text-field
                     v-model="newItem.name"
+                    hint="name required"
                     label="Name"
+                    :rules="nameRules"
                   ></v-text-field
                 ></v-col>
                 <v-col cols="6"
@@ -130,7 +136,12 @@
               </v-row>
               <v-row>
                 <v-col cols="6">
-                  <v-text-field v-model="newItem.age" label="Age"></v-text-field
+                  <v-text-field
+                    v-model="newItem.age"
+                    hint="age required"
+                    label="Age"
+                    :rules="ageRules"
+                  ></v-text-field
                 ></v-col>
                 <v-col cols="6"
                   ><v-text-field
@@ -290,6 +301,12 @@ export default {
           phone: 12235363,
         },
       ],
+      nameRules: [(v) => !!v || "Name is required"],
+      ageRules: [
+        (v) => !!v || "Age is required",
+        (v) => /^\d+$/.test(v) || "Age must be a number",
+        (v) => (v >= 1 && v <= 100) || "Age must be between 1 and 100",
+      ],
       editedItem: {
         name: "",
         email: "",
@@ -321,10 +338,12 @@ export default {
       this.editDialog = true;
     },
     saveEditedItem() {
-      if (this.selectedIndex !== null) {
-        this.items[this.selectedIndex] = { ...this.editedItem };
+      if (this.editedItem.age && this.editedItem.name) {
+        if (this.selectedIndex !== null) {
+          this.items[this.selectedIndex] = { ...this.editedItem };
+        }
+        this.editDialog = false;
       }
-      this.editDialog = false;
     },
     cancelEdit() {
       this.editDialog = false;
@@ -333,8 +352,10 @@ export default {
       this.addDialog = true;
     },
     addNewCardItem() {
-      this.items.push({ ...this.newItem });
-      this.addDialog = false;
+      if (this.newItem.age && this.newItem.name) {
+        this.items.push({ ...this.newItem });
+        this.addDialog = false;
+      }
     },
     cancelAdd() {
       this.addDialog = false;
@@ -353,8 +374,8 @@ export default {
         return filteredItems.sort((a, b) => (a.name < b.name ? 1 : -1));
       }
     },
-    toggleSort() {
-      this.ageRanges.map((obj) => (obj.sortAscending = !obj.sortAscending));
+    toggleSort(range) {
+      range.sortAscending = !range.sortAscending;
     },
     matchesSearch(name) {
       const search = this.search.trim().toLowerCase();
